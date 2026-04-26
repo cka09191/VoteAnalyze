@@ -12,21 +12,19 @@ test_psgi
     client => sub {
         my $cb = shift;
 
-        # 401
-        {
+        subtest '401 without credentials' => sub {
             my $req = HTTP::Request->new(GET => "http://localhost/");
             my $res = $cb->($req);
             is($res->code, 401, 'basic auth');
-        }
+        };
 
-        # 200
-        {
+        subtest '200 with valid credentials' => sub {
             my $req = HTTP::Request->new(GET => "http://localhost/");
             $req->authorization_basic('admin', 'admin');
             my $res = $cb->($req);
             is($res->code, 200, 'basic auth');
             like($res->content, qr{admin});
-        }
+        };
     };
 
 done_testing;

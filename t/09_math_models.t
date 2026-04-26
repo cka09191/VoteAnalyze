@@ -268,7 +268,7 @@ subtest 'run full pipeline' => sub {
     $sum_frac += $_->{fraction} for @{ $result->{clusters} };
     cmp_ok( abs( $sum_frac - 1.0 ), '<', 1e-9, 'cluster fractions sum to 1' );
 };
-    
+
 subtest 'run with k_override' => sub {
     my ( $votes, $pids, $sids ) = _two_group_votes();
     my $m      = VoteAnalyze::MathModels->new;
