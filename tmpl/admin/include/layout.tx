@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title><: $title || 'VoteAnalyze' :></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script src="<: uri_for('/static/js/xsrf-token.js') :>"></script>
+
+    <link href="<: static_file('/static/css/admin.css') :>" rel="stylesheet" type="text/css" media="screen" />
+    <script src="<: static_file('/static/js/main.js') :>"></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="#" class="brand">VoteAnalyze</a>
+        </nav>
+    </header>
+    <div class="container">
+        <aside>
+            <: include "include/sidebar.tx" :>
+        </aside>
+        <main>
+            <: block content -> { } :>
+        </main>
+    </div>
+    <footer>
+        Powered by <a href="http://amon.64p.org/">Amon2</a>
+    </footer>
+</body>
+</html>
