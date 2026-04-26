@@ -2,6 +2,7 @@ requires 'Amon2', '6.18';
 requires 'Amon2::Util';
 requires 'Amon2::Web';
 requires 'Amon2::Web::Dispatcher::RouterBoom';
+requires 'DBD::mysql';
 requires 'DBD::SQLite';
 requires 'DBI';
 requires 'File::ShareDir';
@@ -31,4 +32,7 @@ on configure => sub {
 
 on test => sub {
     requires 'Test::More', '0.98';
+    requires 'Test::WWW::Mechanize::PSGI', '0.15';
+    requires 'HTML::TokeParser', '3.35';
+    
 };
