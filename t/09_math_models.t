@@ -3,10 +3,6 @@ use warnings;
 use Test::More;
 use VoteAnalyze::MathModels;
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 # Build a simple two-group vote dataset.
 #
 # Group A (p1..p5) strongly agrees with s1, s2 and disagrees with s3, s4.
@@ -37,11 +33,7 @@ sub _two_group_votes {
     return ( \@votes, \@pids, \@sids );
 }
 
-# ---------------------------------------------------------------------------
-# 1. Constructor
-# ---------------------------------------------------------------------------
-
-{
+subtest 'constructor' => sub {
     my $m = VoteAnalyze::MathModels->new;
     isa_ok( $m, 'VoteAnalyze::MathModels', 'new returns object' );
 
@@ -50,9 +42,9 @@ sub _two_group_votes {
     is( $m->{pca_variance_threshold},  0.80,     'default pca_variance_threshold' );
     is_deeply( $m->{k_range},          [ 2, 7 ], 'default k_range' );
     is( $m->{random_state},            42,       'default random_state' );
-}
+};
 
-{
+subtest 'constructor with custom parameters' => sub {
     my $m = VoteAnalyze::MathModels->new(
         min_vote_rate           => 0.3,
         min_votes_per_statement => 2,
@@ -65,13 +57,9 @@ sub _two_group_votes {
     is( $m->{pca_variance_threshold},  0.90,     'custom pca_variance_threshold' );
     is_deeply( $m->{k_range},          [ 3, 5 ], 'custom k_range' );
     is( $m->{random_state},            7,        'custom random_state' );
-}
+};
 
-# ---------------------------------------------------------------------------
-# 2. build_vote_matrix
-# ---------------------------------------------------------------------------
-
-{
+subtest 'build_vote_matrix' => sub {
     my $m    = VoteAnalyze::MathModels->new;
     my @pids = qw(p1 p2);
     my @sids = qw(s1 s2 s3);
@@ -100,13 +88,9 @@ sub _two_group_votes {
     );
     my $vm2 = $m->build_vote_matrix( \@extra_votes, \@pids, \@sids );
     is( $vm2->{matrix}[0][0], 0, 'unknown ids are ignored' );
-}
+};
 
-# ---------------------------------------------------------------------------
-# 3. preprocess
-# ---------------------------------------------------------------------------
-
-{
+subtest 'preprocess' => sub {
     my $m = VoteAnalyze::MathModels->new( min_vote_rate => 0.5, min_votes_per_statement => 2 );
 
     # p1 voted on 2/3 statements (rate ~0.67 >= 0.5) — kept
@@ -125,9 +109,9 @@ sub _two_group_votes {
     # s2 has 0 votes after p2 removed — removed (< 2)
     # s1 and s3 have 1 vote each, also < 2 — all statements removed
     is( scalar @{ $clean->{statement_ids} }, 0, 'statements with too few votes removed' );
-}
+};
 
-{
+subtest 'preprocess with all participants/statements meeting thresholds' => sub {
     # All participants meet vote rate; all statements meet minimum count
     my ( $votes, $pids, $sids ) = _two_group_votes();
     my $m  = VoteAnalyze::MathModels->new( min_vote_rate => 0.5, min_votes_per_statement => 5 );
@@ -136,13 +120,9 @@ sub _two_group_votes {
 
     is( scalar @{ $clean->{participant_ids} }, 10, 'all participants kept' );
     is( scalar @{ $clean->{statement_ids} },   5,  'all statements kept' );
-}
+};
 
-# ---------------------------------------------------------------------------
-# 4. run_pca
-# ---------------------------------------------------------------------------
-
-{
+subtest 'run_pca' => sub {
     my ( $votes, $pids, $sids ) = _two_group_votes();
     my $m  = VoteAnalyze::MathModels->new;
     my $vm = $m->build_vote_matrix( $votes, $pids, $sids );
@@ -164,20 +144,15 @@ sub _two_group_votes {
     $sum_var += $_ for @{ $pca->{explained_variance_ratio} };
     cmp_ok( $sum_var, '>', 0, 'explained variance > 0' );
     cmp_ok( $sum_var, '<=', 1.001, 'explained variance ratio <= 1 (within floating-point tolerance)' );
-}
+};
 
-# run_pca dies on an empty matrix
-{
+subtest 'run_pca empty matrix' => sub {
     my $m = VoteAnalyze::MathModels->new;
     eval { $m->run_pca( { matrix => [], participant_ids => [], statement_ids => [] } ) };
     like( $@, qr/run_pca.*empty matrix/i, 'run_pca croaks on empty matrix' );
-}
+};
 
-# ---------------------------------------------------------------------------
-# 5. run_kmeans
-# ---------------------------------------------------------------------------
-
-{
+subtest 'run_kmeans' => sub {
     my ( $votes, $pids, $sids ) = _two_group_votes();
     my $m     = VoteAnalyze::MathModels->new( k_range => [ 2, 4 ] );
     my $vm    = $m->build_vote_matrix( $votes, $pids, $sids );
@@ -197,9 +172,9 @@ sub _two_group_votes {
         cmp_ok( $l, '>=', 0,     "label $l >= 0" );
         cmp_ok( $l, '<=', $k-1,  "label $l <= k-1" );
     }
-}
+};
 
-{
+subtest 'run_kmeans with k_override' => sub {
     # k_override bypasses the silhouette search
     my ( $votes, $pids, $sids ) = _two_group_votes();
     my $m   = VoteAnalyze::MathModels->new;
@@ -209,13 +184,9 @@ sub _two_group_votes {
     my ( $labels, $k, $score ) = $m->run_kmeans( $pca, 3 );
     is( $k, 3, 'k_override respected' );
     is( scalar @$labels, 10, 'labels produced with k_override' );
-}
+};
 
-# ---------------------------------------------------------------------------
-# 6. classify_statements
-# ---------------------------------------------------------------------------
-
-{
+subtest 'classify_statements' => sub {
     my $m = VoteAnalyze::MathModels->new;
 
     # Two clusters of 5:
@@ -258,13 +229,9 @@ sub _two_group_votes {
     is( $by_id{s1}{statement_index}, 0, 's1 statement_index = 0' );
     is( $by_id{s2}{statement_index}, 1, 's2 statement_index = 1' );
     is( $by_id{s3}{statement_index}, 2, 's3 statement_index = 2' );
-}
+};
 
-# ---------------------------------------------------------------------------
-# 7. run (full pipeline)
-# ---------------------------------------------------------------------------
-
-{
+subtest 'run full pipeline' => sub {
     my ( $votes, $pids, $sids ) = _two_group_votes();
     my $m      = VoteAnalyze::MathModels->new( k_range => [ 2, 3 ] );
     my $result = $m->run( $votes, $pids, $sids );
@@ -300,14 +267,13 @@ sub _two_group_votes {
     my $sum_frac = 0;
     $sum_frac += $_->{fraction} for @{ $result->{clusters} };
     cmp_ok( abs( $sum_frac - 1.0 ), '<', 1e-9, 'cluster fractions sum to 1' );
-}
-
-{
-    # run with k_override
+};
+    
+subtest 'run with k_override' => sub {
     my ( $votes, $pids, $sids ) = _two_group_votes();
     my $m      = VoteAnalyze::MathModels->new;
     my $result = $m->run( $votes, $pids, $sids, 2 );
     is( $result->{optimal_k}, 2, 'run respects k_override' );
-}
+};
 
 done_testing;
