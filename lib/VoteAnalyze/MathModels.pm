@@ -125,9 +125,10 @@ sub run_pca {
 
     my $M  = $vote_matrix->{matrix};
     my $np = scalar @$M;
-    my $ns = scalar @{ $M->[0] };
 
-    croak 'run_pca: empty matrix' unless $np >= 1 && $ns >= 1;
+    croak 'run_pca: empty matrix' unless $np >= 1 && @{ $M->[0] // [] };
+
+    my $ns = scalar @{ $M->[0] };
 
     my $max_components = min( $np, $ns );
 
